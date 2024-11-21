@@ -5,6 +5,7 @@ CREATE TABLE Casillero (IDCasillero int primary key not null, IDCliente int, Dir
 CREATE TABLE Paquete (IDPaquete int primary key not null, Descripcion varchar(50), ValorDeclarado varchar(30), PesoPaquete double, EstadoPaquete varchar(30), FechaRecepcion date, FechaEntrega date);
 CREATE TABLE Prealerta (IDPrealerta int primary key not null, IDPaquete int, FechaEnvio date, Courier varchar(50), NumeroRastro int, CostoTraida double); 
 CREATE TABLE Factura (IDFactura int primary key not null, IDUsuario int, MontoTotal double, Fecha date, EstadoPago varchar(30), MetodoPago varchar(30));
+CREATE TABLE Notificaciones (IDNotificacion int primary key not null auto_increment, IDPaquete int not null, Mensaje varchar(255) not null, FechaNotificacion datetime not null, foreign key (IDPaquete) references Paquete(IDPaquete));
 
 -- Asignacion de las foreign key
 ALTER TABLE casillero ADD CONSTRAINT FK_IDcliente foreign key (IDCliente) references Cliente(IDCliente);
