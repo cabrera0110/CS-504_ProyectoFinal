@@ -1,53 +1,64 @@
--- Vista de productos con su stock
-CREATE VIEW VW_ProductosStock AS
-SELECT id_producto, nombre, precio, stock FROM Productos;
+-- Obtener todos los detalles de los clientes y sus paquetes
+CREATE VIEW vw_DetallesClientesPaquetes AS
+SELECT c.IDCliente, c.NombreCliente, p.IDPaquete, p.Descripcion, p.ValorDeclarado, p.PesoPaquete, p.EstadoPaquete
+FROM Cliente c
+JOIN Casillero ca ON c.IDCliente = ca.IDCliente
+JOIN Paquete p ON ca.IDCasillero = p.IDCasillero;
 
--- Vista de ventas por cliente
-CREATE VIEW VW_VentasPorCliente AS
-SELECT v.id_usuario, u.nombre AS cliente, SUM(v.precio * v.cantidad) AS total_venta
-FROM Ventas v
-JOIN Usuarios u ON v.id_usuario = u.id_usuario
-GROUP BY v.id_usuario;
+-- Obtener todas las facturas de un cliente junto con su estado de pago
+CREATE VIEW vw_FacturasClientes AS
+SELECT f.IDFactura, f.MontoTotal, f.Fecha, f.EstadoPago, f.MetodoPago, c.NombreCliente
+FROM Factura f
+JOIN Cliente c ON f.IDUsuario = c.IDCliente;
 
--- Vista de productos en cada categoria
-CREATE VIEW VW_ProductosPorCategoria AS
-SELECT p.id_producto, p.nombre AS producto, c.nombre AS categoria
-FROM Productos p
-JOIN Productos_Categorias pc ON p.id_producto = pc.id_producto
-JOIN Categorias c ON pc.id_categoria = c.id_categoria;
+-- Obtener detalles de prealertas asociadas a paquetes
+CREATE VIEW vw_PrealertasPaquetes AS
+SELECT pa.IDPrealerta, pa.FechaEnvio, pa.Courier, pa.NumeroRastro, pa.CostoTraida, p.Descripcion AS PaqueteDescripcion
+FROM Prealerta pa
+JOIN Paquete p ON pa.IDPaquete = p.IDPaquete;
 
--- Vista de clientes que han hecho compras
-CREATE VIEW VW_ClientesQueHanComprado AS
-SELECT DISTINCT id_usuario FROM Ventas;
+-- Obtener las notificaciones de los clientes
+CREATE VIEW vw_NotificacionesClientes AS
+SELECT n.IDNotificacion, n.Mensaje, n.Fecha, n.Leido, c.NombreCliente
+FROM Notificaciones n
+JOIN Paquete p ON n.IDPaquete = p.IDPaquete
+JOIN Casillero c ON p.IDCasillero = c.IDCasillero;
 
--- Vista de reportes de ventas por fecha
-CREATE VIEW VW_ReportesVentas AS
-SELECT id_venta, id_usuario, id_producto, cantidad, fecha_venta FROM Ventas;
+-- Obtener todos los paquetes con su estado
+CREATE VIEW vw_PaquetesConEstado AS
+SELECT p.IDPaquete, p.Descripcion, p.EstadoPaquete
+FROM Paquete p;
 
--- Vista de historial de ediciones de registros
-CREATE VIEW VW_HistorialEdiciones AS
-SELECT * FROM Historial_Ediciones;
+-- Obtener el resumen de todos los clientes y sus facturas
+CREATE VIEW vw_ResumenClientesFacturas AS
+SELECT c.IDCliente, c.NombreCliente, f.IDFactura, f.MontoTotal, f.EstadoPago
+FROM Cliente c
+JOIN Factura f ON c.IDCliente = f.IDUsuario;
 
--- Vista de inventarios con nombres de productos
-CREATE VIEW VW_InventariosConNombre AS
-SELECT p.nombre, i.stock FROM Inventarios i
-JOIN Productos p ON i.id_producto = p.id_producto;
+-- Obtener el total de la factura de un cliente
+CREATE VIEW vw_TotalFacturaCliente AS
+SELECT c.IDCliente, c.NombreCliente, SUM(f.MontoTotal) AS TotalFactura
+FROM Cliente c
+JOIN Factura f ON c.IDCliente = f.IDUsuario
+GROUP BY c.IDCliente;
 
--- Vista de total de pagos realizados por usuario
-CREATE VIEW VW_TotalPagosPorUsuario AS
-SELECT id_usuario, SUM(monto) AS total_pagos FROM Pagos GROUP BY id_usuario;
+-- Obtener la cantidad total de paquetes que ha recibido un cliente
+CREATE VIEW vw_CantidadPaquetesCliente AS
+SELECT c.IDCliente, c.NombreCliente, COUNT(p.IDPaquete) AS TotalPaquetes
+FROM Cliente c
+JOIN Casillero ca ON c.IDCliente = ca.IDCliente
+JOIN Paquete p ON ca.IDCasillero = p.IDCasillero
+GROUP BY c.IDCliente;
 
--- Vista de productos mas vendidos
-CREATE VIEW VW_ProductosMasVendidos AS
-SELECT p.nombre, SUM(v.cantidad) AS cantidad_vendida
-FROM Ventas v
-JOIN Productos p ON v.id_producto = p.id_producto
-GROUP BY p.id_producto
-ORDER BY cantidad_vendida DESC;
+-- Obtener el estado de todos los paquetes por cliente
+CREATE VIEW vw_EstadoPaquetesClientes AS
+SELECT c.IDCliente, c.NombreCliente, p.EstadoPaquete
+FROM Cliente c
+JOIN Casillero ca ON c.IDCliente = ca.IDCliente
+JOIN Paquete p ON ca.IDCasillero = p.IDCasillero;
 
--- Vista de inventarios bajos (por ejemplo, stock menor a 10)
-CREATE VIEW VW_InventariosBajos AS
-SELECT p.nombre, i.stock
-FROM Inventarios i
-JOIN Productos p ON i.id_producto = p.id_producto
-WHERE i.stock < 10;
+-- Obtener las direcciones de casilleros
+CREATE VIEW vw_DireccionesCasilleros AS
+SELECT c.IDCliente, ca.DireccionCasillero
+FROM Cliente c
+JOIN Casillero ca ON c.IDCliente = ca.IDCliente;

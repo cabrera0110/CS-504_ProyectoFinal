@@ -1,159 +1,216 @@
--- Registrar un nuevo usuario
-CREATE PROCEDURE SP_RegistrarUsuario(IN nombre VARCHAR(255), IN email VARCHAR(255), IN estado ENUM('activo', 'inactivo'))
+-- Insertar un cliente
+CREATE PROCEDURE sp_InsertarCliente(
+    IN p_NombreCliente VARCHAR(30),
+    IN p_CorreoCliente VARCHAR(30),
+    IN p_TelefonoCliente VARCHAR(30),
+    IN p_DireccionCliente VARCHAR(100),
+    IN p_NumeroCasillero INT
+)
 BEGIN
-    INSERT INTO Usuarios (nombre, email, fecha_registro, estado) 
-    VALUES (nombre, email, NOW(), estado);
+    INSERT INTO Cliente (NombreCliente, CorreoCliente, TelefonoCliente, DireccionCliente, NumeroCasillero)
+    VALUES (p_NombreCliente, p_CorreoCliente, p_TelefonoCliente, p_DireccionCliente, p_NumeroCasillero);
 END;
 
--- Asignar rol a un usuario
-CREATE PROCEDURE SP_AsignarRolUsuario(IN id_usuario INT, IN id_rol INT)
+-- Actualizar los datos de un cliente
+CREATE PROCEDURE sp_ActualizarCliente(
+    IN p_IDCliente INT,
+    IN p_NombreCliente VARCHAR(30),
+    IN p_CorreoCliente VARCHAR(30),
+    IN p_TelefonoCliente VARCHAR(30),
+    IN p_DireccionCliente VARCHAR(100),
+    IN p_NumeroCasillero INT
+)
 BEGIN
-    INSERT INTO Usuarios_Roles (id_usuario, id_rol) 
-    VALUES (id_usuario, id_rol);
+    UPDATE Cliente
+    SET NombreCliente = p_NombreCliente,
+        CorreoCliente = p_CorreoCliente,
+        TelefonoCliente = p_TelefonoCliente,
+        DireccionCliente = p_DireccionCliente,
+        NumeroCasillero = p_NumeroCasillero
+    WHERE IDCliente = p_IDCliente;
 END;
 
--- Eliminar usuario
-CREATE PROCEDURE SP_EliminarUsuario(IN id_usuario INT)
+-- Eliminar un cliente
+CREATE PROCEDURE sp_EliminarCliente(
+    IN p_IDCliente INT
+)
 BEGIN
-    DELETE FROM Usuarios WHERE id_usuario = id_usuario;
+    DELETE FROM Cliente WHERE IDCliente = p_IDCliente;
 END;
 
--- Registrar un nuevo producto
-CREATE PROCEDURE SP_RegistrarProducto(IN nombre VARCHAR(255), IN descripcion TEXT, IN precio DECIMAL(10, 2), IN stock INT)
+-- Almacenar para obtener todos los paquetes de un cliente
+CREATE PROCEDURE sp_ObtenerPaquetesPorCliente(
+    IN p_IDCliente INT
+)
 BEGIN
-    INSERT INTO Productos (nombre, descripcion, precio, stock) 
-    VALUES (nombre, descripcion, precio, stock);
+    SELECT p.IDPaquete, p.Descripcion, p.ValorDeclarado, p.PesoPaquete, p.EstadoPaquete, p.FechaRecepcion, p.FechaEntrega
+    FROM Paquete p
+    JOIN Casillero c ON p.IDCliente = c.IDCliente
+    WHERE c.IDCliente = p_IDCliente;
 END;
 
--- Actualizar stock de un producto
-CREATE PROCEDURE SP_ActualizarStockProducto(IN id_producto INT, IN nuevo_stock INT)
+-- Insertar un casillero
+CREATE PROCEDURE sp_InsertarCasillero(
+    IN p_IDCliente INT,
+    IN p_DireccionCasillero VARCHAR(100)
+)
 BEGIN
-    UPDATE Productos SET stock = nuevo_stock WHERE id_producto = id_producto;
+    INSERT INTO Casillero (IDCliente, DireccionCasillero)
+    VALUES (p_IDCliente, p_DireccionCasillero);
 END;
 
--- Eliminar producto
-CREATE PROCEDURE SP_EliminarProducto(IN id_producto INT)
+-- Obtener los detalles de un paquete
+CREATE PROCEDURE sp_ObtenerPaqueteDetalle(
+    IN p_IDPaquete INT
+)
 BEGIN
-    DELETE FROM Productos WHERE id_producto = id_producto;
+    SELECT * FROM Paquete WHERE IDPaquete = p_IDPaquete;
 END;
 
--- Registrar una nueva venta
-CREATE PROCEDURE SP_RegistrarVenta(IN id_usuario INT, IN id_producto INT, IN cantidad INT)
+-- Actualizar el estado de un paquete
+CREATE PROCEDURE sp_ActualizarEstadoPaquete(
+    IN p_IDPaquete INT,
+    IN p_NuevoEstado VARCHAR(30)
+)
 BEGIN
-    INSERT INTO Ventas (id_usuario, id_producto, cantidad, fecha_venta) 
-    VALUES (id_usuario, id_producto, cantidad, NOW());
+    UPDATE Paquete
+    SET EstadoPaquete = p_NuevoEstado
+    WHERE IDPaquete = p_IDPaquete;
 END;
 
--- Registrar pago
-CREATE PROCEDURE SP_RegistrarPago(IN id_venta INT, IN monto DECIMAL(10, 2), IN metodo_pago VARCHAR(50))
+-- Obtener todas las facturas de un cliente
+CREATE PROCEDURE sp_ObtenerFacturasPorCliente(
+    IN p_IDCliente INT
+)
 BEGIN
-    INSERT INTO Pagos (id_venta, monto, fecha_pago, metodo_pago) 
-    VALUES (id_venta, monto, NOW(), metodo_pago);
+    SELECT f.IDFactura, f.MontoTotal, f.Fecha, f.EstadoPago, f.MetodoPago
+    FROM Factura f
+    WHERE f.IDUsuario = p_IDCliente;
 END;
 
--- Registrar devolución
-CREATE PROCEDURE SP_RegistrarDevolucion(IN id_venta INT, IN motivo TEXT)
+-- Insertar una factura
+CREATE PROCEDURE sp_InsertarFactura(
+    IN p_IDUsuario INT,
+    IN p_MontoTotal DOUBLE,
+    IN p_Fecha DATE,
+    IN p_EstadoPago VARCHAR(30),
+    IN p_MetodoPago VARCHAR(30)
+)
 BEGIN
-    INSERT INTO Devoluciones (id_venta, fecha_devolucion, motivo) 
-    VALUES (id_venta, NOW(), motivo);
+    INSERT INTO Factura (IDUsuario, MontoTotal, Fecha, EstadoPago, MetodoPago)
+    VALUES (p_IDUsuario, p_MontoTotal, p_Fecha, p_EstadoPago, p_MetodoPago);
 END;
 
--- Generar factura
-CREATE PROCEDURE SP_GenerarFactura(IN id_venta INT)
+-- Actualizar el estado de pago de una factura
+CREATE PROCEDURE sp_ActualizarEstadoPagoFactura(
+    IN p_IDFactura INT,
+    IN p_EstadoPago VARCHAR(30)
+)
 BEGIN
-    INSERT INTO Facturas (id_venta, total, fecha_emision) 
-    VALUES (id_venta, (SELECT SUM(precio * cantidad) FROM Ventas WHERE id_venta = id_venta), NOW());
+    UPDATE Factura
+    SET EstadoPago = p_EstadoPago
+    WHERE IDFactura = p_IDFactura;
 END;
 
--- Calcular descuento
-CREATE PROCEDURE SP_CalcularDescuento(IN id_producto INT, IN porcentaje DECIMAL(5, 2))
+-- Insertar una prealerta
+CREATE PROCEDURE sp_InsertarPrealerta(
+    IN p_IDPaquete INT,
+    IN p_FechaEnvio DATE,
+    IN p_Courier VARCHAR(50),
+    IN p_NumeroRastro INT,
+    IN p_CostoTraida DOUBLE
+)
 BEGIN
-    UPDATE Productos SET precio = precio * (1 - porcentaje / 100) WHERE id_producto = id_producto;
+    INSERT INTO Prealerta (IDPaquete, FechaEnvio, Courier, NumeroRastro, CostoTraida)
+    VALUES (p_IDPaquete, p_FechaEnvio, p_Courier, p_NumeroRastro, p_CostoTraida);
 END;
 
--- Generar reporte de ventas
-CREATE PROCEDURE SP_GenerarReporteVentas(IN fecha_inicio DATE, IN fecha_fin DATE)
+-- Obtener una notificación por ID
+CREATE PROCEDURE sp_ObtenerNotificacion(
+    IN p_IDNotificacion INT
+)
 BEGIN
-    SELECT * FROM Ventas WHERE fecha_venta BETWEEN fecha_inicio AND fecha_fin;
+    SELECT * FROM Notificaciones WHERE IDNotificacion = p_IDNotificacion;
 END;
 
--- Actualizar producto
-CREATE PROCEDURE SP_ActualizarProducto(IN id_producto INT, IN nombre VARCHAR(255), IN descripcion TEXT, IN precio DECIMAL(10, 2))
+-- Obtener todas las notificaciones de un paquete
+CREATE PROCEDURE sp_ObtenerNotificacionesPorPaquete(
+    IN p_IDPaquete INT
+)
 BEGIN
-    UPDATE Productos SET nombre = nombre, descripcion = descripcion, precio = precio WHERE id_producto = id_producto;
+    SELECT * FROM Notificaciones WHERE IDPaquete = p_IDPaquete;
 END;
 
--- Eliminar proveedor
-CREATE PROCEDURE SP_EliminarProveedor(IN id_proveedor INT)
+-- Eliminar una notificación
+CREATE PROCEDURE sp_EliminarNotificacion(
+    IN p_IDNotificacion INT
+)
 BEGIN
-    DELETE FROM Proveedores WHERE id_proveedor = id_proveedor;
+    DELETE FROM Notificaciones WHERE IDNotificacion = p_IDNotificacion;
 END;
 
--- Registrar categoría
-CREATE PROCEDURE SP_RegistrarCategoria(IN nombre VARCHAR(255))
+-- Eliminar un paquete
+CREATE PROCEDURE sp_EliminarPaquete(
+    IN p_IDPaquete INT
+)
 BEGIN
-    INSERT INTO Categorias (nombre) VALUES (nombre);
+    DELETE FROM Paquete WHERE IDPaquete = p_IDPaquete;
 END;
 
--- Asignar categoría a producto
-CREATE PROCEDURE SP_AsignarCategoriaProducto(IN id_producto INT, IN id_categoria INT)
+-- Eliminar una prealerta
+CREATE PROCEDURE sp_EliminarPrealerta(
+    IN p_IDPrealerta INT
+)
 BEGIN
-    INSERT INTO Productos_Categorias (id_producto, id_categoria) VALUES (id_producto, id_categoria);
+    DELETE FROM Prealerta WHERE IDPrealerta = p_IDPrealerta;
 END;
 
--- Eliminar categoría
-CREATE PROCEDURE SP_EliminarCategoria(IN id_categoria INT)
+-- Obtener la cantidad de paquetes en un casillero
+CREATE PROCEDURE sp_ObtenerCantidadPaquetesEnCasillero(
+    IN p_IDCasillero INT
+)
 BEGIN
-    DELETE FROM Categorias WHERE id_categoria = id_categoria;
+    SELECT COUNT(*) 
+    FROM Paquete
+    WHERE IDCasillero = p_IDCasillero;
 END;
 
--- Registrar evaluación
-CREATE PROCEDURE SP_RegistrarEvaluacion(IN id_producto INT, IN id_cliente INT, IN puntuacion INT, IN comentarios TEXT)
+-- Obtener todos los clientes
+CREATE PROCEDURE sp_ObtenerClientes()
 BEGIN
-    INSERT INTO Evaluaciones (id_producto, id_cliente, puntuacion, comentarios) 
-    VALUES (id_producto, id_cliente, puntuacion, comentarios);
+    SELECT * FROM Cliente;
 END;
 
--- Generar reporte de devoluciones
-CREATE PROCEDURE SP_GenerarReporteDevoluciones(IN fecha_inicio DATE, IN fecha_fin DATE)
+-- Obtener todos los casilleros
+CREATE PROCEDURE sp_ObtenerCasilleros()
 BEGIN
-    SELECT * FROM Devoluciones WHERE fecha_devolucion BETWEEN fecha_inicio AND fecha_fin;
+    SELECT * FROM Casillero;
 END;
 
--- Actualizar envío
-CREATE PROCEDURE SP_ActualizarEnvio(IN id_envio INT, IN fecha_envio DATE)
+-- Obtener todas las facturas
+CREATE PROCEDURE sp_ObtenerFacturas()
 BEGIN
-    UPDATE Envíos SET fecha_envio = fecha_envio WHERE id_envio = id_envio;
+    SELECT * FROM Factura;
 END;
 
---  Generar reporte de pedidos
-CREATE PROCEDURE SP_GenerarReportePedidos(IN fecha_inicio DATE, IN fecha_fin DATE)
+-- Obtener todas las prealertas
+CREATE PROCEDURE sp_ObtenerPrealertas()
 BEGIN
-    SELECT * FROM Pedidos WHERE fecha_pedido BETWEEN fecha_inicio AND fecha_fin;
+    SELECT * FROM Prealerta;
 END;
 
--- Registrar historial de edición
-CREATE PROCEDURE SP_RegistrarHistorialEdicion(IN tabla VARCHAR(50), IN id_registro INT, IN usuario_edito INT)
+-- Obtener todas las notificaciones
+CREATE PROCEDURE sp_ObtenerNotificaciones()
 BEGIN
-    INSERT INTO Historial_Ediciones (tabla, id_registro, fecha_edicion, usuario_edito) 
-    VALUES (tabla, id_registro, NOW(), usuario_edito);
+    SELECT * FROM Notificaciones;
 END;
 
--- Actualizar estado de pedido
-CREATE PROCEDURE SP_ActualizarEstadoPedido(IN id_pedido INT, IN estado VARCHAR(50))
+-- Obtener el total de la factura de un cliente
+CREATE PROCEDURE sp_ObtenerTotalFacturaCliente(
+    IN p_IDCliente INT
+)
 BEGIN
-    UPDATE Pedidos SET estado = estado WHERE id_pedido = id_pedido;
-END;
-
--- Registrar notificación
-CREATE PROCEDURE SP_RegistrarNotificacion(IN id_usuario INT, IN mensaje TEXT)
-BEGIN
-    INSERT INTO Notificaciones (id_usuario, mensaje, fecha_emision, estado) 
-    VALUES (id_usuario, mensaje, NOW(), 'pendiente');
-END;
-
--- Generar reporte de inventarios
-CREATE PROCEDURE SP_GenerarReporteInventarios()
-BEGIN
-    SELECT * FROM Inventarios;
+    SELECT SUM(MontoTotal) AS TotalFactura
+    FROM Factura
+    WHERE IDUsuario = p_IDCliente;
 END;
