@@ -21,9 +21,10 @@ CREATE TABLE Casillero (
 -- Crear la tabla Paquete
 CREATE TABLE Paquete (
     IDPaquete int primary key not null,
+    IDCasillero int,
     Descripcion varchar(50),
-    ValorDeclarado varchar(30),
-    PesoPaquete double,
+    ValorDeclarado decimal(10,2),
+    PesoPaquete decimal(10,2),
     EstadoPaquete varchar(30),
     FechaRecepcion date,
     FechaEntrega date
@@ -36,14 +37,14 @@ CREATE TABLE Prealerta (
     FechaEnvio date,
     Courier varchar(50),
     NumeroRastro int,
-    CostoTraida double
+    CostoTraida number(10, 2)
 );
 
 -- Crear la tabla Factura
 CREATE TABLE Factura (
     IDFactura int primary key not null,
     IDUsuario int,
-    MontoTotal double,
+    MontoTotal number(10, 2),
     Fecha date,
     EstadoPago varchar(30),
     MetodoPago varchar(30)
@@ -51,18 +52,23 @@ CREATE TABLE Factura (
 
 -- Crear la tabla Notificaciones
 CREATE TABLE Notificaciones (
-    IDNotificacion int primary key not null auto_increment,
+    IDNotificacion int primary key not null,
     IDPaquete int not null,
     Mensaje varchar(255) not null,
-    FechaNotificacion datetime not null,
-    foreign key (IDPaquete) references Paquete(IDPaquete)
+    FechaNotificacion DATE not null
 );
 
 -- Asignar la clave foránea FK_IDcliente a la tabla Casillero
-ALTER TABLE casillero ADD CONSTRAINT FK_IDcliente foreign key (IDCliente) references Cliente(IDCliente);
+ALTER TABLE Casillero ADD CONSTRAINT FK_IDcliente foreign key (IDCliente) references Cliente(IDCliente);
 
 -- Asignar la clave foránea FK_IDpaquete a la tabla Prealerta
-ALTER TABLE prealerta ADD CONSTRAINT FK_IDpaquete foreign key (IDPaquete) references Paquete(IDPaquete);
+ALTER TABLE Prealerta ADD CONSTRAINT FK_IDpaquete foreign key (IDPaquete) references Paquete(IDPaquete);
 
 -- Asignar la clave foránea FK_IDusuario a la tabla Factura
 ALTER TABLE Factura ADD CONSTRAINT FK_IDusuario foreign key (IDUsuario) references Cliente(IDCliente);
+
+-- Asignar la clave foránea FK_IDpaquete a la tabla Notificaciones
+ALTER TABLE Notificaciones ADD CONSTRAINT FK_IDpaquete foreign key (IDPaquete) references Paquete(IDPaquete);
+
+-- Asignar la clave foránea FK_IDCasillero a la tabla Paquete
+ALTER TABLE Paquete ADD CONSTRAINT FK_IDCasillero FOREIGN KEY (IDCasillero) REFERENCES Casillero(IDCasillero);
