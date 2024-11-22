@@ -1,58 +1,53 @@
--- Vista para obtener todos los paquetes entregados
-CREATE VIEW VistaPaquetesEntregados AS
-SELECT IDPaquete, Descripcion, PesoPaquete, EstadoPaquete, FechaRecepcion, FechaEntrega
-FROM Paquete
-WHERE EstadoPaquete = 'Entregado';
+-- Vista de productos con su stock
+CREATE VIEW VW_ProductosStock AS
+SELECT id_producto, nombre, precio, stock FROM Productos;
 
--- Vista para obtener información detallada de las facturas y su estado
-CREATE VIEW VistaFacturas AS
-SELECT F.IDFactura, F.MontoTotal, F.EstadoPago, F.Fecha, C.NombreCliente
-FROM Factura F
-JOIN Cliente C ON F.IDUsuario = C.IDCliente;
+-- Vista de ventas por cliente
+CREATE VIEW VW_VentasPorCliente AS
+SELECT v.id_usuario, u.nombre AS cliente, SUM(v.precio * v.cantidad) AS total_venta
+FROM Ventas v
+JOIN Usuarios u ON v.id_usuario = u.id_usuario
+GROUP BY v.id_usuario;
 
--- Vista para obtener todos los clientes con sus respectivos paquetes
-CREATE VIEW VistaClientesPaquetes AS
-SELECT C.IDCliente, C.NombreCliente, P.IDPaquete, P.Descripcion, P.EstadoPaquete
-FROM Cliente C
-JOIN Paquete P ON C.IDCliente = P.IDCliente;
+-- Vista de productos en cada categoria
+CREATE VIEW VW_ProductosPorCategoria AS
+SELECT p.id_producto, p.nombre AS producto, c.nombre AS categoria
+FROM Productos p
+JOIN Productos_Categorias pc ON p.id_producto = pc.id_producto
+JOIN Categorias c ON pc.id_categoria = c.id_categoria;
 
--- Vista para obtener los detalles de las prealertas
-CREATE VIEW VistaPrealertas AS
-SELECT P.IDPrealerta, P.IDPaquete, P.Courier, P.NumeroRastro, P.CostoTraida, P.FechaEnvio
-FROM Prealerta P;
+-- Vista de clientes que han hecho compras
+CREATE VIEW VW_ClientesQueHanComprado AS
+SELECT DISTINCT id_usuario FROM Ventas;
 
--- Vista para obtener el historial de pagos de una factura
-CREATE VIEW VistaHistorialPagos AS
-SELECT FP.IDFactura, FP.MontoPago, FP.FechaPago, F.EstadoPago
-FROM Factura_Pago FP
-JOIN Factura F ON FP.IDFactura = F.IDFactura;
+-- Vista de reportes de ventas por fecha
+CREATE VIEW VW_ReportesVentas AS
+SELECT id_venta, id_usuario, id_producto, cantidad, fecha_venta FROM Ventas;
 
--- Vista para obtener la información de las notas de crédito
-CREATE VIEW VistaNotasCredito AS
-SELECT NC.IDNotaCredito, NC.IDFactura, NC.MontoCredito, NC.FechaCredito
-FROM NotaCredito NC;
+-- Vista de historial de ediciones de registros
+CREATE VIEW VW_HistorialEdiciones AS
+SELECT * FROM Historial_Ediciones;
 
--- Vista para ver los paquetes en tránsito
-CREATE VIEW VistaPaquetesTransito AS
-SELECT IDPaquete, Descripcion, EstadoPaquete, FechaRecepcion
-FROM Paquete
-WHERE EstadoPaquete = 'En tránsito';
+-- Vista de inventarios con nombres de productos
+CREATE VIEW VW_InventariosConNombre AS
+SELECT p.nombre, i.stock FROM Inventarios i
+JOIN Productos p ON i.id_producto = p.id_producto;
 
--- Vista para obtener un resumen de los pagos por cliente
-CREATE VIEW VistaResumenPagosCliente AS
-SELECT C.IDCliente, C.NombreCliente, SUM(F.MontoTotal) AS TotalPagado
-FROM Factura F
-JOIN Cliente C ON F.IDUsuario = C.IDCliente
-WHERE F.EstadoPago = 'Pagado'
-GROUP BY C.IDCliente;
+-- Vista de total de pagos realizados por usuario
+CREATE VIEW VW_TotalPagosPorUsuario AS
+SELECT id_usuario, SUM(monto) AS total_pagos FROM Pagos GROUP BY id_usuario;
 
--- Vista para obtener el estado de todos los paquetes de un cliente
-CREATE VIEW VistaEstadoPaquetesCliente AS
-SELECT C.IDCliente, C.NombreCliente, P.EstadoPaquete
-FROM Cliente C
-JOIN Paquete P ON C.IDCliente = P.IDCliente;
+-- Vista de productos mas vendidos
+CREATE VIEW VW_ProductosMasVendidos AS
+SELECT p.nombre, SUM(v.cantidad) AS cantidad_vendida
+FROM Ventas v
+JOIN Productos p ON v.id_producto = p.id_producto
+GROUP BY p.id_producto
+ORDER BY cantidad_vendida DESC;
 
--- Vista para obtener los servicios adicionales registrados para las facturas
-CREATE VIEW VistaServiciosAdicionales AS
-SELECT SA.IDFactura, SA.DescripcionServicio, SA.MontoServicio
-FROM ServicioAdicional SA;
+-- Vista de inventarios bajos (por ejemplo, stock menor a 10)
+CREATE VIEW VW_InventariosBajos AS
+SELECT p.nombre, i.stock
+FROM Inventarios i
+JOIN Productos p ON i.id_producto = p.id_producto
+WHERE i.stock < 10;

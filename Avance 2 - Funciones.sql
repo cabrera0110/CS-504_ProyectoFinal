@@ -1,195 +1,120 @@
--- Función para calcular el total de una factura, incluyendo servicios adicionales
-CREATE FUNCTION CalcularTotalFactura(IN _IDFactura INT)
-RETURNS DOUBLE
+-- Obtener total de una venta
+CREATE FUNCTION FN_ObtenerTotalVenta(id_venta INT) RETURNS DECIMAL(10, 2)
 BEGIN
-    DECLARE TotalFactura DOUBLE;
-    DECLARE ServiciosAdicionales DOUBLE;
-    
-    SELECT MontoTotal INTO TotalFactura FROM Factura WHERE IDFactura = _IDFactura;
-    
-    SELECT SUM(MontoServicio) INTO ServiciosAdicionales
-    FROM ServicioAdicional WHERE IDFactura = _IDFactura;
-    
-    RETURN TotalFactura + ServiciosAdicionales;
+    DECLARE total DECIMAL(10, 2);
+    SELECT SUM(precio * cantidad) INTO total FROM Ventas WHERE id_venta = id_venta;
+    RETURN total;
 END;
 
--- Función para obtener el estado de un paquete
-CREATE FUNCTION ObtenerEstadoPaquete(IN _IDPaquete INT)
-RETURNS VARCHAR(30)
+-- Obtener precio de un producto
+CREATE FUNCTION FN_ObtenerPrecioProducto(id_producto INT) RETURNS DECIMAL(10, 2)
 BEGIN
-    DECLARE EstadoPaquete VARCHAR(30);
-    
-    SELECT EstadoPaquete INTO EstadoPaquete FROM Paquete WHERE IDPaquete = _IDPaquete;
-    
-    RETURN EstadoPaquete;
+    DECLARE precio DECIMAL(10, 2);
+    SELECT precio INTO precio FROM Productos WHERE id_producto = id_producto;
+    RETURN precio;
 END;
 
--- Función para obtener el total de pagos de un cliente
-CREATE FUNCTION ObtenerTotalPagosCliente(IN _IDCliente INT)
-RETURNS DOUBLE
+-- Obtener total de devoluciones de un producto
+CREATE FUNCTION FN_ObtenerTotalDevoluciones(id_producto INT) RETURNS INT
 BEGIN
-    DECLARE TotalPagos DOUBLE;
-    
-    SELECT SUM(MontoPago) INTO TotalPagos
-    FROM Pago WHERE IDCliente = _IDCliente;
-    
-    RETURN TotalPagos;
+    DECLARE total INT;
+    SELECT COUNT(*) INTO total FROM Devoluciones WHERE id_producto = id_producto;
+    RETURN total;
 END;
 
--- Función para verificar si un paquete está entregado
-CREATE FUNCTION VerificarPaqueteEntregado(IN _IDPaquete INT)
-RETURNS BOOLEAN
+-- Obtener stock disponible de un producto
+CREATE FUNCTION FN_ObtenerStockDisponible(id_producto INT) RETURNS INT
 BEGIN
-    DECLARE Estado VARCHAR(30);
-    
-    SELECT EstadoPaquete INTO Estado FROM Paquete WHERE IDPaquete = _IDPaquete;
-    
-    IF Estado = 'Entregado' THEN
-        RETURN TRUE;
-    ELSE
-        RETURN FALSE;
-    END IF;
+    DECLARE stock INT;
+    SELECT stock INTO stock FROM Productos WHERE id_producto = id_producto;
+    RETURN stock;
 END;
 
--- Función para obtener el nombre del cliente que realizó una factura
-CREATE FUNCTION ObtenerNombreClienteFactura(IN _IDFactura INT)
-RETURNS VARCHAR(100)
+-- Obtener promedio de evaluaciÃ³n de un producto
+CREATE FUNCTION FN_ObtenerPromedioEvaluacion(id_producto INT) RETURNS DECIMAL(5, 2)
 BEGIN
-    DECLARE NombreCliente VARCHAR(100);
-    
-    SELECT C.NombreCliente INTO NombreCliente
-    FROM Factura F
-    JOIN Cliente C ON F.IDUsuario = C.IDCliente
-    WHERE F.IDFactura = _IDFactura;
-    
-    RETURN NombreCliente;
+    DECLARE promedio DECIMAL(5, 2);
+    SELECT AVG(puntuacion) INTO promedio FROM Evaluaciones WHERE id_producto = id_producto;
+    RETURN promedio;
 END;
 
--- Función para calcular el saldo pendiente de una factura
-CREATE FUNCTION CalcularSaldoPendiente(IN _IDFactura INT)
-RETURNS DOUBLE
+-- Obtener monto de un pago
+CREATE FUNCTION FN_ObtenerMontoPago(id_pago INT) RETURNS DECIMAL(10, 2)
 BEGIN
-    DECLARE Total DOUBLE;
-    DECLARE Pagado DOUBLE;
-    
-    SELECT MontoTotal INTO Total FROM Factura WHERE IDFactura = _IDFactura;
-    
-    SELECT SUM(MontoPago) INTO Pagado FROM Pago WHERE IDFactura = _IDFactura;
-    
-    RETURN Total - Pagado;
+    DECLARE monto DECIMAL(10, 2);
+    SELECT monto INTO monto FROM Pagos WHERE id_pago = id_pago;
+    RETURN monto;
 END;
 
--- Función para obtener la fecha de entrega estimada de un paquete
-CREATE FUNCTION ObtenerFechaEntregaEstimado(IN _IDPaquete INT)
-RETURNS DATE
+-- Obtener total de ventas en un rango de fechas
+CREATE FUNCTION FN_ObtenerTotalVentasPorMes(fecha_inicio DATE, fecha_fin DATE) RETURNS DECIMAL(10, 2)
 BEGIN
-    DECLARE FechaEntrega DATE;
-    
-    SELECT FechaEntrega INTO FechaEntrega FROM Paquete WHERE IDPaquete = _IDPaquete;
-    
-    RETURN FechaEntrega;
+    DECLARE total DECIMAL(10, 2);
+    SELECT SUM(precio * cantidad) INTO total FROM Ventas WHERE fecha_venta BETWEEN fecha_inicio AND fecha_fin;
+    RETURN total;
 END;
 
--- Función para verificar si un cliente tiene facturas pendientes
-CREATE FUNCTION TieneFacturasPendientes(IN _IDCliente INT)
-RETURNS BOOLEAN
+-- Obtener cliente mÃ¡s frecuente
+CREATE FUNCTION FN_ObtenerClienteMasFrecuente() RETURNS INT
 BEGIN
-    DECLARE EstadoPago VARCHAR(30);
-    
-    SELECT EstadoPago INTO EstadoPago
-    FROM Factura
-    WHERE IDUsuario = _IDCliente AND EstadoPago = 'Pendiente';
-    
-    IF EstadoPago IS NOT NULL THEN
-        RETURN TRUE;
-    ELSE
-        RETURN FALSE;
-    END IF;
+    DECLARE id_cliente INT;
+    SELECT id_cliente INTO id_cliente FROM Pedidos GROUP BY id_cliente ORDER BY COUNT(*) DESC LIMIT 1;
+    RETURN id_cliente;
 END;
 
--- Función para calcular el monto total de los servicios adicionales de una factura
-CREATE FUNCTION ObtenerTotalServiciosAdicionales(IN _IDFactura INT)
-RETURNS DOUBLE
+-- Obtener estado de un pedido
+CREATE FUNCTION FN_ObtenerEstadoPedido(id_pedido INT) RETURNS VARCHAR(50)
 BEGIN
-    DECLARE TotalAdicionales DOUBLE;
-    
-    SELECT SUM(MontoServicio) INTO TotalAdicionales
-    FROM ServicioAdicional
-    WHERE IDFactura = _IDFactura;
-    
-    RETURN TotalAdicionales;
+    DECLARE estado VARCHAR(50);
+    SELECT estado INTO estado FROM Pedidos WHERE id_pedido = id_pedido;
+    RETURN estado;
 END;
 
--- Función para obtener el monto total de las facturas de un cliente
-CREATE FUNCTION ObtenerMontoTotalFacturasCliente(IN _IDCliente INT)
-RETURNS DOUBLE
+-- Obtener historial de ediciones de un registro
+CREATE FUNCTION FN_ObtenerHistorialEdiciones(id_registro INT, tabla VARCHAR(50)) RETURNS TEXT
 BEGIN
-    DECLARE MontoTotal DOUBLE;
-    
-    SELECT SUM(MontoTotal) INTO MontoTotal
-    FROM Factura
-    WHERE IDUsuario = _IDCliente;
-    
-    RETURN MontoTotal;
+    DECLARE historial TEXT;
+    SELECT GROUP_CONCAT(fecha_edicion, ': ', usuario_edito) INTO historial FROM Historial_Ediciones 
+    WHERE id_registro = id_registro AND tabla = tabla;
+    RETURN historial;
 END;
 
--- Función para obtener el número de prealertas de un paquete
-CREATE FUNCTION ObtenerNumeroPrealertas(IN _IDPaquete INT)
-RETURNS INT
+-- Obtener total de inventario
+CREATE FUNCTION FN_ObtenerTotalInventario() RETURNS INT
 BEGIN
-    DECLARE NumeroPrealertas INT;
-    
-    SELECT COUNT(*) INTO NumeroPrealertas FROM Prealerta WHERE IDPaquete = _IDPaquete;
-    
-    RETURN NumeroPrealertas;
+    DECLARE total INT;
+    SELECT SUM(stock) INTO total FROM Inventarios;
+    RETURN total;
 END;
 
--- Función para obtener el monto total de las entregas realizadas por un cliente
-CREATE FUNCTION ObtenerTotalEntregasCliente(IN _IDCliente INT)
-RETURNS DOUBLE
+-- Obtener total de pagos realizados
+CREATE FUNCTION FN_ObtenerTotalPagos() RETURNS DECIMAL(10, 2)
 BEGIN
-    DECLARE TotalEntregas DOUBLE;
-    
-    SELECT SUM(MontoTotal) INTO TotalEntregas
-    FROM Factura F
-    JOIN Paquete P ON F.IDFactura = P.IDFactura
-    WHERE F.IDUsuario = _IDCliente AND P.EstadoPaquete = 'Entregado';
-    
-    RETURN TotalEntregas;
+    DECLARE total DECIMAL(10, 2);
+    SELECT SUM(monto) INTO total FROM Pagos;
+    RETURN total;
 END;
 
--- Función para calcular el tiempo de envío de un paquete
-CREATE FUNCTION CalcularTiempoEnvio(IN _IDPaquete INT)
-RETURNS INT
+-- Obtener total de productos en una categorÃ­a
+CREATE FUNCTION FN_ObtenerTotalProductosPorCategoria(id_categoria INT) RETURNS INT
 BEGIN
-    DECLARE TiempoEnvio INT;
-    DECLARE FechaEnvio DATE;
-    DECLARE FechaRecepcion DATE;
-    
-    SELECT FechaEnvio, FechaRecepcion INTO FechaEnvio, FechaRecepcion FROM Prealerta WHERE IDPaquete = _IDPaquete;
-    
-    SET TiempoEnvio = DATEDIFF(FechaRecepcion, FechaEnvio);
-    
-    RETURN TiempoEnvio;
+    DECLARE total INT;
+    SELECT COUNT(*) INTO total FROM Productos_Categorias WHERE id_categoria = id_categoria;
+    RETURN total;
 END;
 
--- Función para obtener los paquetes asociados a un cliente
-CREATE FUNCTION ObtenerPaquetesCliente(IN _IDCliente INT)
-RETURNS TABLE
+-- Obtener nombre de un usuario por ID
+CREATE FUNCTION FN_ObtenerNombreUsuario(id_usuario INT) RETURNS VARCHAR(255)
 BEGIN
-    RETURN SELECT P.IDPaquete, P.Descripcion, P.EstadoPaquete
-    FROM Paquete P
-    WHERE P.IDCliente = _IDCliente;
+    DECLARE nombre VARCHAR(255);
+    SELECT nombre INTO nombre FROM Usuarios WHERE id_usuario = id_usuario;
+    RETURN nombre;
 END;
 
--- Función para obtener la dirección del casillero de un cliente
-CREATE FUNCTION ObtenerDireccionCasillero(IN _IDCliente INT)
-RETURNS VARCHAR(100)
+-- Obtener datos de un proveedor
+CREATE FUNCTION FN_ObtenerDatosProveedor(id_proveedor INT) RETURNS TEXT
 BEGIN
-    DECLARE DireccionCasillero VARCHAR(100);
-    
-    SELECT DireccionCasillero INTO DireccionCasillero FROM Casillero WHERE IDCliente = _IDCliente;
-    
-    RETURN DireccionCasillero;
+    DECLARE datos TEXT;
+    SELECT nombre, telefono, direccion INTO datos FROM Proveedores WHERE id_proveedor = id_proveedor;
+    RETURN datos;
 END;
-
