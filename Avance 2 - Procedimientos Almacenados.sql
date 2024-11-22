@@ -1,237 +1,286 @@
 -- Procedimiento para registrar un nuevo cliente
-CREATE PROCEDURE RegistrarCliente(
-    IN _NombreCliente VARCHAR(100), 
-    IN _DireccionCliente VARCHAR(255), 
-    IN _TelefonoCliente VARCHAR(20), 
-    IN _CorreoCliente VARCHAR(100)
+CREATE OR REPLACE PROCEDURE RegistrarCliente(
+    NombreCliente IN VARCHAR2,
+    DireccionCliente IN VARCHAR2,
+    TelefonoCliente IN VARCHAR2,
+    CorreoCliente IN VARCHAR2
 )
+AS
 BEGIN
     INSERT INTO Cliente (NombreCliente, DireccionCliente, TelefonoCliente, CorreoCliente)
-    VALUES (_NombreCliente, _DireccionCliente, _TelefonoCliente, _CorreoCliente);
+    VALUES (NombreCliente, DireccionCliente, TelefonoCliente, CorreoCliente);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al registrar el cliente: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para registrar un paquete
-CREATE PROCEDURE RegistrarPaquete(
-    IN _IDCliente INT, 
-    IN _Descripcion VARCHAR(255), 
-    IN _PesoPaquete DOUBLE, 
-    IN _EstadoPaquete VARCHAR(30)
+CREATE OR REPLACE PROCEDURE RegistrarPaquete(
+    IDCliente IN NUMBER,
+    Descripcion IN VARCHAR2,
+    PesoPaquete IN NUMBER,
+    EstadoPaquete IN VARCHAR2
 )
+AS
 BEGIN
     INSERT INTO Paquete (IDCliente, Descripcion, PesoPaquete, EstadoPaquete, FechaRecepcion)
-    VALUES (_IDCliente, _Descripcion, _PesoPaquete, _EstadoPaquete, NOW());
+    VALUES (IDCliente, Descripcion, PesoPaquete, EstadoPaquete, SYSDATE);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al registrar el paquete: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para actualizar el estado de un paquete
-CREATE PROCEDURE ActualizarEstadoPaquete(
-    IN _IDPaquete INT, 
-    IN _NuevoEstado VARCHAR(30)
+CREATE OR REPLACE PROCEDURE ActualizarEstadoPaquete(
+    P_IDPaquete IN NUMBER,
+    NuevoEstado IN VARCHAR2
 )
+AS
 BEGIN
-    UPDATE Paquete SET EstadoPaquete = _NuevoEstado WHERE IDPaquete = _IDPaquete;
+    UPDATE Paquete
+    SET EstadoPaquete = NuevoEstado
+    WHERE IDPaquete = P_IDPaquete;
+    
+    IF SQL%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No se encontró el paquete con ID: ' || P_IDPaquete);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Estado del paquete actualizado correctamente.');
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al actualizar el estado del paquete: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para asignar una factura a un paquete
-CREATE PROCEDURE AsignarFacturaAPaquete(
-    IN _IDFactura INT, 
-    IN _IDPaquete INT
+CREATE OR REPLACE PROCEDURE AsignarFacturaAPaquete(
+    _IDFactura IN NUMBER,
+    _IDPaquete IN NUMBER
 )
+AS
 BEGIN
-    INSERT INTO Factura_Paquete (IDFactura, IDPaquete) VALUES (_IDFactura, _IDPaquete);
+    INSERT INTO Factura_Paquete (IDFactura, IDPaquete)
+    VALUES (_IDFactura, _IDPaquete);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al asignar la factura al paquete: ' || SQLERRM);
 END;
+/
+
+-- Procedimiento para consultar paquetes por cliente
+CREATE OR REPLACE PROCEDURE ConsultarPaquetesPorCliente(
+    IDCliente IN NUMBER
+)
+AS
+BEGIN
+    FOR registro IN (
+        SELECT IDPaquete, Descripcion, PesoPaquete, EstadoPaquete, FechaRecepcion
+        FROM Paquete
+        WHERE IDCliente = IDCliente
+    )
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            'ID Paquete: ' || registro.IDPaquete || 
+            ', Descripcion: ' || registro.Descripcion || 
+            ', Peso: ' || registro.PesoPaquete || 
+            ', Estado: ' || registro.EstadoPaquete || 
+            ', Fecha Recepcion: ' || TO_CHAR(registro.FechaRecepcion, 'DD-MON-YYYY')
+        );
+    END LOOP;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al consultar los paquetes del cliente: ' || SQLERRM);
+END;
+/
 
 -- Procedimiento para registrar una nueva factura
-CREATE PROCEDURE RegistrarFactura(
-    IN _IDCliente INT, 
-    IN _MontoTotal DOUBLE, 
-    IN _MetodoPago VARCHAR(30)
+CREATE OR REPLACE PROCEDURE RegistrarFactura(
+    _IDCliente IN NUMBER, 
+    _MontoTotal IN NUMBER, 
+    _MetodoPago IN VARCHAR2
 )
+AS
 BEGIN
     INSERT INTO Factura (IDUsuario, MontoTotal, EstadoPago, MetodoPago, Fecha)
-    VALUES (_IDCliente, _MontoTotal, 'Pendiente', _MetodoPago, NOW());
+    VALUES (_IDCliente, _MontoTotal, 'Pendiente', _MetodoPago, SYSDATE);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al registrar la factura: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para generar una prealerta para un paquete
-CREATE PROCEDURE GenerarPrealerta(
-    IN _IDPaquete INT, 
-    IN _Courier VARCHAR(50), 
-    IN _NumeroRastro VARCHAR(50), 
-    IN _CostoTraida DOUBLE
+CREATE OR REPLACE PROCEDURE GenerarPrealerta(
+    _IDPaquete IN NUMBER, 
+    _Courier IN VARCHAR2, 
+    _NumeroRastro IN VARCHAR2, 
+    _CostoTraida IN NUMBER
 )
+AS
 BEGIN
     INSERT INTO Prealerta (IDPaquete, Courier, NumeroRastro, CostoTraida, FechaEnvio)
-    VALUES (_IDPaquete, _Courier, _NumeroRastro, _CostoTraida, NOW());
+    VALUES (_IDPaquete, _Courier, _NumeroRastro, _CostoTraida, SYSDATE);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al generar la prealerta: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para registrar un casillero
-CREATE PROCEDURE RegistrarCasillero(
-    IN _IDCliente INT, 
-    IN _DireccionCasillero VARCHAR(255)
+CREATE OR REPLACE PROCEDURE RegistrarCasillero(
+    _IDCliente IN NUMBER, 
+    _DireccionCasillero IN VARCHAR2
 )
+AS
 BEGIN
     INSERT INTO Casillero (IDCliente, DireccionCasillero)
     VALUES (_IDCliente, _DireccionCasillero);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al registrar el casillero: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para actualizar la fecha de entrega de un paquete
-CREATE PROCEDURE ActualizarFechaEntregaPaquete(
-    IN _IDPaquete INT, 
-    IN _FechaEntrega DATE
+CREATE OR REPLACE PROCEDURE ActualizarFechaEntregaPaquete(
+    _IDPaquete IN NUMBER, 
+    _FechaEntrega IN DATE
 )
+AS
 BEGIN
-    UPDATE Paquete SET FechaEntrega = _FechaEntrega WHERE IDPaquete = _IDPaquete;
+    UPDATE Paquete 
+    SET FechaEntrega = _FechaEntrega 
+    WHERE IDPaquete = _IDPaquete;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No se encontró el paquete con ID: ' || _IDPaquete);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Fecha de entrega actualizada correctamente.');
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al actualizar la fecha de entrega: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para notificar la entrega de un paquete
-CREATE PROCEDURE NotificarEntrega(
-    IN _IDPaquete INT, 
-    IN _Mensaje VARCHAR(255)
+CREATE OR REPLACE PROCEDURE NotificarEntrega(
+    _IDPaquete IN NUMBER, 
+    _Mensaje IN VARCHAR2
 )
+AS
 BEGIN
     INSERT INTO Notificaciones (IDPaquete, Mensaje, FechaNotificacion)
-    VALUES (_IDPaquete, _Mensaje, NOW());
+    VALUES (_IDPaquete, _Mensaje, SYSDATE);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al notificar la entrega: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para actualizar el método de pago de una factura
-CREATE PROCEDURE ActualizarMetodoPagoFactura(
-    IN _IDFactura INT, 
-    IN _MetodoPago VARCHAR(30)
+CREATE OR REPLACE PROCEDURE ActualizarMetodoPagoFactura(
+    _IDFactura IN NUMBER, 
+    _MetodoPago IN VARCHAR2
 )
+AS
 BEGIN
-    UPDATE Factura SET MetodoPago = _MetodoPago WHERE IDFactura = _IDFactura;
+    UPDATE Factura 
+    SET MetodoPago = _MetodoPago 
+    WHERE IDFactura = _IDFactura;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No se encontró la factura con ID: ' || _IDFactura);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Método de pago actualizado correctamente.');
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al actualizar el método de pago: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para eliminar una factura
-CREATE PROCEDURE EliminarFactura(
-    IN _IDFactura INT
+CREATE OR REPLACE PROCEDURE EliminarFactura(
+    _IDFactura IN NUMBER
 )
+AS
 BEGIN
     DELETE FROM Factura WHERE IDFactura = _IDFactura;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No se encontró la factura con ID: ' || _IDFactura);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Factura eliminada correctamente.');
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al eliminar la factura: ' || SQLERRM);
 END;
+/
 
 -- Procedimiento para eliminar un paquete
-CREATE PROCEDURE EliminarPaquete(
-    IN _IDPaquete INT
+CREATE OR REPLACE PROCEDURE EliminarPaquete(
+    _IDPaquete IN NUMBER
 )
+AS
 BEGIN
     DELETE FROM Paquete WHERE IDPaquete = _IDPaquete;
-END;
 
--- Procedimiento para eliminar una prealerta
-CREATE PROCEDURE EliminarPrealerta(
-    IN _IDPrealerta INT
+    IF SQL%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No se encontró el paquete con ID: ' || _IDPaquete);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Paquete eliminado correctamente.');
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al eliminar el paquete: ' || SQLERRM);
+END;
+/
+
+-- Procedimiento para verificar el estado de pago de una factura
+CREATE OR REPLACE PROCEDURE VerificarPagoFactura(
+    _IDFactura IN NUMBER
 )
+AS
+    EstadoPago VARCHAR2(20);
 BEGIN
-    DELETE FROM Prealerta WHERE IDPrealerta = _IDPrealerta;
-END;
-
--- Procedimiento para actualizar los datos de un cliente
-CREATE PROCEDURE ActualizarCliente(
-    IN _IDCliente INT, 
-    IN _NuevoNombreCliente VARCHAR(100), 
-    IN _NuevaDireccionCliente VARCHAR(255), 
-    IN _NuevoTelefonoCliente VARCHAR(20), 
-    IN _NuevoCorreoCliente VARCHAR(100)
-)
-BEGIN
-    UPDATE Cliente 
-    SET NombreCliente = _NuevoNombreCliente, 
-        DireccionCliente = _NuevaDireccionCliente, 
-        TelefonoCliente = _NuevoTelefonoCliente, 
-        CorreoCliente = _NuevoCorreoCliente
-    WHERE IDCliente = _IDCliente;
-END;
-
--- 15: Procedimiento para verificar el pago de una factura
-CREATE PROCEDURE VerificarPagoFactura(
-    IN _IDFactura INT
-)
-BEGIN
-    SELECT EstadoPago FROM Factura WHERE IDFactura = _IDFactura;
-END;
-
--- Procedimiento para registrar una nota de crédito
-CREATE PROCEDURE RegistrarNotaCredito(
-    IN _IDFactura INT, 
-    IN _MontoCredito DOUBLE
-)
-BEGIN
-    INSERT INTO NotaCredito (IDFactura, MontoCredito, FechaCredito)
-    VALUES (_IDFactura, _MontoCredito, NOW());
-END;
-
--- Procedimiento para generar un reporte de facturación
-CREATE PROCEDURE GenerarReporteFacturacion(
-    IN _FechaInicio DATE, 
-    IN _FechaFin DATE
-)
-BEGIN
-    SELECT * FROM Factura WHERE Fecha BETWEEN _FechaInicio AND _FechaFin;
-END;
-
--- Procedimiento para obtener los paquetes entregados
-CREATE PROCEDURE PaquetesEntregados()
-BEGIN
-    SELECT * FROM Paquete WHERE EstadoPaquete = 'Entregado';
-END;
-
--- Procedimiento para obtener el estado de todos los paquetes de un cliente
-CREATE PROCEDURE ObtenerEstadoPaquetesCliente(
-    IN _IDCliente INT
-)
-BEGIN
-    SELECT EstadoPaquete FROM Paquete WHERE IDCliente = _IDCliente;
-END;
-
--- Procedimiento para registrar el pago de una factura
-CREATE PROCEDURE RegistrarPagoFactura(
-    IN _IDFactura INT, 
-    IN _MontoPago DOUBLE
-)
-BEGIN
-    UPDATE Factura SET EstadoPago = 'Pagado', MontoPagado = _MontoPago 
+    SELECT EstadoPago 
+    INTO EstadoPago
+    FROM Factura
     WHERE IDFactura = _IDFactura;
-END;
 
--- Procedimiento para asignar un nuevo estado a una factura
-CREATE PROCEDURE AsignarEstadoFactura(
-    IN _IDFactura INT, 
-    IN _NuevoEstado VARCHAR(30)
+    IF EstadoPago = 'Pagado' THEN
+        DBMS_OUTPUT.PUT_LINE('La factura ya está pagada.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('La factura está pendiente de pago.');
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al verificar el estado de pago de la factura: ' || SQLERRM);
+END;
+/
+
+-- Procedimiento para realizar una consulta sobre la disponibilidad de un casillero
+CREATE OR REPLACE PROCEDURE ConsultarDisponibilidadCasillero(
+    _IDCliente IN NUMBER
 )
+AS
+    Disponibilidad VARCHAR2(10);
 BEGIN
-    UPDATE Factura SET EstadoPago = _NuevoEstado WHERE IDFactura = _IDFactura;
-END;
+    SELECT CASE
+               WHEN EXISTS (SELECT 1 FROM Casillero WHERE IDCliente = _IDCliente) 
+               THEN 'Disponible'
+               ELSE 'No Disponible'
+           END
+    INTO Disponibilidad
+    FROM dual;
 
--- Procedimiento para agregar un nuevo servicio adicional a una factura
-CREATE PROCEDURE AgregarServicioAdicional(
-    IN _IDFactura INT, 
-    IN _DescripcionServicio VARCHAR(255), 
-    IN _MontoServicio DOUBLE
-)
-BEGIN
-    INSERT INTO ServicioAdicional (IDFactura, DescripcionServicio, MontoServicio)
-    VALUES (_IDFactura, _DescripcionServicio, _MontoServicio);
+    DBMS_OUTPUT.PUT_LINE('Disponibilidad del casillero: ' || Disponibilidad);
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Error al verificar la disponibilidad del casillero: ' || SQLERRM);
 END;
-
--- Procedimiento para actualizar el peso de un paquete
-CREATE PROCEDURE ActualizarPesoPaquete(
-    IN _IDPaquete INT, 
-    IN _NuevoPeso DOUBLE
-)
-BEGIN
-    UPDATE Paquete SET PesoPaquete = _NuevoPeso WHERE IDPaquete = _IDPaquete;
-END;
-
--- Procedimiento para realizar una auditoría de los pagos
-CREATE PROCEDURE RealizarAuditoriaPagos()
-BEGIN
-    SELECT * FROM Factura WHERE EstadoPago = 'Pagado';
-END;
-
--- Procedimiento para eliminar un cliente
-CREATE PROCEDURE EliminarCliente(
-    IN _IDCliente INT
-)
-BEGIN
-    DELETE FROM Cliente WHERE IDCliente = _IDCliente;
-END;
+/
