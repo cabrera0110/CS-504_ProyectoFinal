@@ -4,7 +4,7 @@ AFTER UPDATE ON Paquete
 FOR EACH ROW
 BEGIN
     IF NEW.FechaEntrega IS NOT NULL THEN
-        UPDATE Paquete SET EstadoPaquete = 'Entregado' WHERE IDPaquete = NEW.IDPaquete;
+        SET NEW.EstadoPaquete = 'Entregado';
     END IF;
 END;
 
@@ -13,9 +13,11 @@ CREATE TRIGGER CalcularMontoFactura
 AFTER INSERT ON Paquete
 FOR EACH ROW
 BEGIN
-    DECLARE total DOUBLE;
-    SELECT SUM(CAST(ValorDeclarado AS DOUBLE)) INTO total FROM Paquete WHERE IDFactura = NEW.IDFactura;
-    UPDATE Factura SET MontoTotal = total WHERE IDFactura = NEW.IDFactura;
+    DECLARE total DECIMAL(10, 2);
+    SELECT SUM(ValorDeclarado) INTO total 
+    FROM Paquete 
+    WHERE IDCasillero = (SELECT IDCasillero FROM Paquete WHERE IDPaquete = NEW.IDPaquete);
+    UPDATE Factura SET MontoTotal = total WHERE IDFactura = (SELECT IDFactura FROM Factura WHERE IDUsuario = (SELECT IDCliente FROM Casillero WHERE IDCasillero = NEW.IDCasillero));
 END;
 
 -- Insertar una notificación cuando un paquete es recibido
@@ -25,7 +27,7 @@ FOR EACH ROW
 BEGIN
     IF NEW.EstadoPaquete = 'Recibido' THEN
         INSERT INTO Notificaciones (IDPaquete, Mensaje, FechaNotificacion) 
-        VALUES (NEW.IDPaquete, 'Tu paquete ha sido recibido.', NOW());
+        VALUES (NEW.IDPaquete, 'Tu paquete ha sido recibido.', CURRENT_DATE);
     END IF;
 END;
 
@@ -35,7 +37,9 @@ AFTER INSERT ON Paquete
 FOR EACH ROW
 BEGIN
     DECLARE prealertaExistente INT;
-    SELECT COUNT(*) INTO prealertaExistente FROM Prealerta WHERE IDPaquete = NEW.IDPaquete;
+    SELECT COUNT(*) INTO prealertaExistente 
+    FROM Prealerta 
+    WHERE IDPaquete = NEW.IDPaquete;
     IF prealertaExistente = 0 THEN
         UPDATE Paquete SET EstadoPaquete = 'Esperando Prealerta' WHERE IDPaquete = NEW.IDPaquete;
     END IF;

@@ -19,10 +19,11 @@ JOIN Paquete p ON pa.IDPaquete = p.IDPaquete;
 
 -- Obtener las notificaciones de los clientes
 CREATE VIEW vw_NotificacionesClientes AS
-SELECT n.IDNotificacion, n.Mensaje, n.Fecha, n.Leido, c.NombreCliente
+SELECT n.IDNotificacion, n.Mensaje, n.FechaNotificacion, cl.NombreCliente
 FROM Notificaciones n
 JOIN Paquete p ON n.IDPaquete = p.IDPaquete
-JOIN Casillero c ON p.IDCasillero = c.IDCasillero;
+JOIN Casillero c ON p.IDCasillero = c.IDCasillero
+JOIN Cliente cl ON c.IDCliente = cl.IDCliente;
 
 -- Obtener todos los paquetes con su estado
 CREATE VIEW vw_PaquetesConEstado AS
@@ -40,7 +41,7 @@ CREATE VIEW vw_TotalFacturaCliente AS
 SELECT c.IDCliente, c.NombreCliente, SUM(f.MontoTotal) AS TotalFactura
 FROM Cliente c
 JOIN Factura f ON c.IDCliente = f.IDUsuario
-GROUP BY c.IDCliente;
+GROUP BY c.IDCliente, c.NombreCliente;
 
 -- Obtener la cantidad total de paquetes que ha recibido un cliente
 CREATE VIEW vw_CantidadPaquetesCliente AS
@@ -48,7 +49,7 @@ SELECT c.IDCliente, c.NombreCliente, COUNT(p.IDPaquete) AS TotalPaquetes
 FROM Cliente c
 JOIN Casillero ca ON c.IDCliente = ca.IDCliente
 JOIN Paquete p ON ca.IDCasillero = p.IDCasillero
-GROUP BY c.IDCliente;
+GROUP BY c.IDCliente, c.NombreCliente;
 
 -- Obtener el estado de todos los paquetes por cliente
 CREATE VIEW vw_EstadoPaquetesClientes AS
